@@ -50,12 +50,12 @@ SFR(IRC_CLKO,   0xBB);
 #define IP_PX0      BIT0
 
 SFR(P3,         0xB0);
-    // SBIT(P3_5,      0xB0, 5);
-    // SBIT(P3_4,      0xB0, 4);
-    // SBIT(P3_3,      0xB0, 3);
-    // SBIT(P3_2,      0xB0, 2);
-    // SBIT(P3_1,      0xB0, 1);
-    // SBIT(P3_0,      0xB0, 0);
+    SBIT(P3_5,      0xB0, 5);
+    SBIT(P3_4,      0xB0, 4);
+    SBIT(P3_3,      0xB0, 3);
+    SBIT(P3_2,      0xB0, 2);
+    SBIT(P3_1,      0xB0, 1);
+    SBIT(P3_0,      0xB0, 0);
 SFR(P3M1,       0xB1);
 SFR(P3M0,       0xB2);
 #define Pin5        BIT5

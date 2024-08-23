@@ -31,7 +31,19 @@ uint8_t g_led_refresh;
 uint8_t g_led_timer_presc;
 uint8_t g_led_digit;
 
+uint8_t g_led_cmd_id;
 uint8_t g_led_array[LED_DATALEN];
+const uint8_t g_led_mask[LED_CNT] = 
+{
+    0x80,
+    0x40,
+    0x20,
+    0x10,
+    0x08,
+    0x04,
+    0x02,
+    0x01
+};
 
 void led_init(void)
 {
@@ -45,6 +57,7 @@ void led_init(void)
     g_led_refresh = 0;
     g_led_timer_presc = LED_TIMER_PRESC;
     g_led_digit = LED_CNT;
+    g_led_cmd_id = 0;
 
     /** IO init */
     P3M0 |= LED_OE | LED_DOUT | LED_SCLK | LED_RCLK;    ///< All driving ports are set to push-pull
@@ -73,21 +86,106 @@ uint8_t led_need_refresh(void)
     return g_led_refresh;
 }
 
+void spi_send(uint8_t byte)
+{
+    /** Assuming CS signal is already lowed */
+
+    P3_0 = byte & 0x80;
+    SCLK_H;
+    SCLK_L;
+    P3_0 = byte & 0x40;
+    SCLK_H;
+    SCLK_L;
+    P3_0 = byte & 0x20;
+    SCLK_H;
+    SCLK_L;
+    P3_0 = byte & 0x10;
+    SCLK_H;
+    SCLK_L;
+    P3_0 = byte & 0x08;
+    SCLK_H;
+    SCLK_L;
+    P3_0 = byte & 0x04;
+    SCLK_H;
+    SCLK_L;
+    P3_0 = byte & 0x02;
+    SCLK_H;
+    SCLK_L;
+    P3_0 = byte & 0x01;
+    SCLK_H;
+    SCLK_L;
+}
+
 void led_refresh(void)
 {
-    uint8_t i, buf, dsel = 0x80;
+    uint8_t i;
+    uint8_t datah, datal, digit;
+
+    /** Prepare data */
+    i = 2*g_led_digit - 1;
+    datah = g_led_array[i];
+    datal = g_led_array[i-1];
+    digit = g_led_mask[g_led_digit-1];
 
     /** Emulate SPI */
     OE_H;
+    spi_send(datah);
+    spi_send(datal);
+    spi_send(digit);
+    RCLK_H;
+    RCLK_L;
+    OE_L;
 
+    /** Change digit */
+    if (--g_led_digit == 0)
+    {
+        g_led_digit = LED_CNT;
+    }
+
+    /** Clear flag */
+    g_led_refresh = 0;
 }
 
 void led_command_recv(uint8_t byte)
 {
-    ;
+    if (g_led_cmd_id == 0)
+    {
+        /** Expects header1 0x55 */
+        if (byte == 0x55)
+        {
+            g_led_cmd_id = 1;
+        }
+    }
+    else if (g_led_cmd_id == 1)
+    {
+        /** Expects header2 0xAA */
+        if (byte == 0xAA)
+        {
+            g_led_cmd_id = 2;
+        }
+        else
+        {
+            g_led_cmd_id = 0;       ///< Dump if not followed
+        }
+    }
+    else if (g_led_cmd_id < LED_DATALEN + 2)
+    {
+        /** Expects display data */
+        g_led_array[g_led_cmd_id - 2] = byte;
+        ++g_led_cmd_id;
+    }
+    else
+    {
+        g_led_cmd_id = 0;
+    }
 }
 
 void led_proc_irq(void)
 {
-    ;
+    if (++g_led_timer_presc & 0x01)
+    {
+        return;
+    }
+
+    g_led_refresh = 1;      ///< Set flag to trigger a new refresh
 }
