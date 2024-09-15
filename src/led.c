@@ -20,7 +20,7 @@
 #define LED_CNT             (8)
 #define LED_DATALEN         (LED_CNT * 2)
 
-#define LED_REFRESH_RATE    (25)
+#define LED_REFRESH_RATE    (50)
 #define LED_TIMER_PRESC     (2)
 #define LED_COMM_RATE       (LED_REFRESH_RATE*LED_CNT)
 #define LED_TIMER_VAL       (65536L - 22118400UL / LED_TIMER_PRESC / LED_COMM_RATE)
@@ -28,22 +28,30 @@
 #define LED_TIMER_L         ((uint8_t)LED_TIMER_VAL)
 
 uint8_t g_led_refresh;
+uint8_t g_1sec;
+
 uint8_t g_led_timer_presc;
+uint16_t g_led_1sec_presc;
 uint8_t g_led_digit;
 
 uint8_t g_led_cmd_id;
 uint8_t g_led_array[LED_DATALEN];
 const uint8_t g_led_mask[LED_CNT] = 
 {
-    0x80,
-    0x40,
-    0x20,
-    0x10,
-    0x08,
-    0x04,
-    0x02,
-    0x01
+    0x7F,
+    0xBF,
+    0xDF,
+    0xEF,
+    0xF7,
+    0xFB,
+    0xFD,
+    0xFE
 };
+
+// const uint16_t g_led_table[] =
+// {
+//     ;
+// };
 
 void led_init(void)
 {
@@ -55,7 +63,10 @@ void led_init(void)
         g_led_array[i] = 0xFF;
     }
     g_led_refresh = 0;
-    g_led_timer_presc = LED_TIMER_PRESC;
+    g_1sec = 0;
+
+    g_led_1sec_presc = 0;
+    g_led_timer_presc = 0;
     g_led_digit = LED_CNT;
     g_led_cmd_id = 0;
 
@@ -182,10 +193,33 @@ void led_command_recv(uint8_t byte)
 
 void led_proc_irq(void)
 {
-    if (++g_led_timer_presc & 0x01)
+    if (++g_led_timer_presc == LED_TIMER_PRESC)
     {
-        return;
+        g_led_timer_presc = 0;
+        led_set_refresh_flag(1);    ///< Set flag to trigger a new refresh
     }
 
-    g_led_refresh = 1;      ///< Set flag to trigger a new refresh
+    if (++g_led_1sec_presc == LED_TIMER_PRESC * LED_REFRESH_RATE * LED_CNT)
+    {
+        g_led_1sec_presc = 0;
+        g_1sec = 1;
+    }
+}
+
+void led_set_display(uint8_t word)
+{
+    uint8_t i;
+
+    for (i = 0;i < LED_DATALEN; ++i)
+    {
+        g_led_array[i] = word;
+    }
+}
+
+uint8_t led_1sec(void)
+{
+    uint8_t temp = g_1sec;
+
+    g_1sec = 0;
+    return temp;
 }

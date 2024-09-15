@@ -2,7 +2,7 @@
 #include "serial.h"
 #include "led.h"
 
-void ext0_irq(void) __interrupt(0)
+void ext0_irq(void) __interrupt(IE0_VECTOR)
 {
     /**
      * When code hits here, INT0 line (P3.2), aka emulated serial Rx,
@@ -14,14 +14,14 @@ void ext0_irq(void) __interrupt(0)
     serial_receive_begin();
 }
 
-void timer0_irq(void) __interrupt(1)
+void timer0_irq(void) __interrupt(TF0_VECTOR)
 {
     TCON &= ~TCON_TF0;      ///< Clear TIM0 interrupt flag
 
     led_proc_irq();
 }
 
-void timer1_irq(void) __interrupt(3)
+void timer1_irq(void) __interrupt(TF1_VECTOR)
 {
     TCON &= ~TCON_TF1;      ///< Clear TIM1 interrupt flag
 

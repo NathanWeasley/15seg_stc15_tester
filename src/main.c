@@ -15,14 +15,29 @@
 
 int main(void)
 {
+    uint8_t i = 0;
+
     SP = 0x60;      ///< Set stack pointer to 0x60
 
     serial_on_byte_receive(led_command_recv);
     serial_init();
     led_init();
 
+    P3M0 |= Pin1;
+    P3M1 &= ~Pin1;
+
     while (1)
     {
+        if (led_1sec())
+        {
+            if (i == 8)
+            {
+                i = 0;
+            }
+            led_set_display(1 << i);
+            ++i;
+        }
+
         if (led_need_refresh())
         {
             led_refresh();
@@ -32,3 +47,6 @@ int main(void)
     return 0;
 }
 
+extern void ext0_irq(void) __interrupt(IE0_VECTOR);
+extern void timer0_irq(void) __interrupt(TF0_VECTOR);
+extern void timer1_irq(void) __interrupt(TF1_VECTOR);
