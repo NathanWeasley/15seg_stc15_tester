@@ -23,8 +23,8 @@ int main(void)
     serial_init();
     led_init();
 
-    P3M0 |= Pin1;
-    P3M1 &= ~Pin1;
+    // P3M0 |= Pin1;
+    // P3M1 &= ~Pin1;
 
     while (1)
     {
@@ -34,7 +34,7 @@ int main(void)
             {
                 i = 0;
             }
-            led_set_display(1 << i);
+            //led_set_display(1 << i);
             ++i;
         }
 

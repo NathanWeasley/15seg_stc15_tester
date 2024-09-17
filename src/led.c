@@ -1,5 +1,6 @@
 #include "led.h"
 #include "stc15f100.h"
+#include "seg15_ascii.h"
 
 #define LED_OE              Pin5
 #define LED_DOUT            Pin0
@@ -27,47 +28,52 @@
 #define LED_TIMER_H         ((uint8_t)(LED_TIMER_VAL>>8))
 #define LED_TIMER_L         ((uint8_t)LED_TIMER_VAL)
 
+/** Flags */
 uint8_t g_led_refresh;
 uint8_t g_1sec;
 
+/** Prescalers */
 uint8_t g_led_timer_presc;
 uint16_t g_led_1sec_presc;
-uint8_t g_led_digit;
 
+/** Command */
 uint8_t g_led_cmd_id;
-uint8_t g_led_array[LED_DATALEN];
+
+/** Display buffer */
+uint16_t g_led_array[LED_CNT];
+uint8_t g_led_digit;
+const uint8_t * g_led_digit_ptr;
+
 const uint8_t g_led_mask[LED_CNT] = 
 {
-    0x7F,
-    0xBF,
-    0xDF,
-    0xEF,
-    0xF7,
-    0xFB,
+    0xFE,
     0xFD,
-    0xFE
+    0xFB,
+    0xF7,
+    0xEF,
+    0xDF,
+    0xBF,
+    0x7F
 };
-
-// const uint16_t g_led_table[] =
-// {
-//     ;
-// };
 
 void led_init(void)
 {
     uint8_t i;
 
     /** Variable init */
-    for (i = 0; i < LED_DATALEN; ++i)
+    for (i = 0; i < LED_CNT; ++i)
     {
-        g_led_array[i] = 0xFF;
+        g_led_array[i] = g_seg15_ascii[i+1];
     }
     g_led_refresh = 0;
     g_1sec = 0;
 
     g_led_1sec_presc = 0;
     g_led_timer_presc = 0;
+
     g_led_digit = LED_CNT;
+    g_led_digit_ptr = (const uint8_t *)g_led_array;
+
     g_led_cmd_id = 0;
 
     /** IO init */
@@ -133,15 +139,16 @@ void led_refresh(void)
     uint8_t datah, datal, digit;
 
     /** Prepare data */
-    i = 2*g_led_digit - 1;
-    datah = g_led_array[i];
-    datal = g_led_array[i-1];
+    // i = g_led_digit;
+    // g_led_digit_ptr = (const uint8_t *)(&g_led_array[g_led_digit]);
+    datah = *g_led_digit_ptr++;
+    datal = *g_led_digit_ptr++;
     digit = g_led_mask[g_led_digit-1];
 
     /** Emulate SPI */
     OE_H;
+    spi_send(datal);        ///< Amendment for SDCC endianness (little-endian)
     spi_send(datah);
-    spi_send(datal);
     spi_send(digit);
     RCLK_H;
     RCLK_L;
@@ -151,6 +158,7 @@ void led_refresh(void)
     if (--g_led_digit == 0)
     {
         g_led_digit = LED_CNT;
+        g_led_digit_ptr = (const uint8_t *)g_led_array;     ///< Reset buffer ptr
     }
 
     /** Clear flag */
