@@ -21,7 +21,7 @@
 #define LED_CNT             (8)
 #define LED_DATALEN         (LED_CNT * 2)
 
-#define LED_REFRESH_RATE    (50)
+#define LED_REFRESH_RATE    (100)
 #define LED_TIMER_PRESC     (2)
 #define LED_COMM_RATE       (LED_REFRESH_RATE*LED_CNT)
 #define LED_TIMER_VAL       (65536L - 22118400UL / LED_TIMER_PRESC / LED_COMM_RATE)
@@ -44,6 +44,7 @@ uint16_t g_led_array[LED_CNT];
 uint8_t g_led_digit;
 const uint8_t * g_led_digit_ptr;
 
+#if 1
 const uint8_t g_led_mask[LED_CNT] = 
 {
     0xFE,
@@ -55,6 +56,19 @@ const uint8_t g_led_mask[LED_CNT] =
     0xBF,
     0x7F
 };
+#else
+const uint8_t g_led_mask[LED_CNT] = 
+{
+    0x01,
+    0x02,
+    0x04,
+    0x08,
+    0x10,
+    0x20,
+    0x40,
+    0x80
+};
+#endif
 
 void led_init(void)
 {
