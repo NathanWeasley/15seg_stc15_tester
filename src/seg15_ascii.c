@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+const uint8_t g_seg15_ascii_size = 37;
+
 const uint16_t g_seg15_ascii[128] =
 {
     0x0000,     /// SPACE, or any unregistered value

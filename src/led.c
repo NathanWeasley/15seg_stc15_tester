@@ -22,9 +22,10 @@
 #define LED_DATALEN         (LED_CNT * 2)
 
 #define LED_REFRESH_RATE    (100)
-#define LED_TIMER_PRESC     (2)
+#define LED_TIMER_PRESC     (1)
 #define LED_COMM_RATE       (LED_REFRESH_RATE*LED_CNT)
-#define LED_TIMER_VAL       (65536L - 22118400UL / LED_TIMER_PRESC / LED_COMM_RATE)
+// #define LED_TIMER_VAL       (65536L - 22118400UL / LED_TIMER_PRESC / LED_COMM_RATE)
+#define LED_TIMER_VAL       (65536L - 11059200UL / LED_COMM_RATE)
 #define LED_TIMER_H         ((uint8_t)(LED_TIMER_VAL>>8))
 #define LED_TIMER_L         ((uint8_t)LED_TIMER_VAL)
 
@@ -149,7 +150,6 @@ void spi_send(uint8_t byte)
 
 void led_refresh(void)
 {
-    uint8_t i;
     uint8_t datah, datal, digit;
 
     /** Prepare data */
@@ -228,13 +228,25 @@ void led_proc_irq(void)
     }
 }
 
-void led_set_display(uint8_t word)
+void led_set_display(void)
 {
-    uint8_t i;
+    static uint8_t offset = 0;
+    uint8_t i, j;
 
-    for (i = 0;i < LED_DATALEN; ++i)
+    j = offset;
+    for (i = 0; i < LED_CNT; ++i)
     {
-        g_led_array[i] = word;
+        g_led_array[i] = g_seg15_ascii[j];
+
+        if (++j == g_seg15_ascii_size)
+        {
+            j = 0;
+        }
+    }
+
+    if (++offset == g_seg15_ascii_size)
+    {
+        offset = 0;
     }
 }
 

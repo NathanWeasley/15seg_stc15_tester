@@ -15,8 +15,6 @@
 
 int main(void)
 {
-    uint8_t i = 0;
-
     SP = 0x60;      ///< Set stack pointer to 0x60
 
     serial_on_byte_receive(led_command_recv);
@@ -30,12 +28,7 @@ int main(void)
     {
         if (led_1sec())
         {
-            if (i == 8)
-            {
-                i = 0;
-            }
-            //led_set_display(1 << i);
-            ++i;
+            led_set_display();
         }
 
         if (led_need_refresh())
